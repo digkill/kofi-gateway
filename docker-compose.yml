@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: kofi
+      MYSQL_USER: kofi_user
+      MYSQL_PASSWORD: kofi_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  gateway:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      MYSQL_DSN: kofi_user:kofi_pass@tcp(mysql:3306)/kofi?parseTime=true
+      KOFI_SECRET: your-secret
+      KOFI_USERNAME: yourname
+      CORE_SERVICE_ADDR: gateway:50051
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8080/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  grpcserver:
+    build: .
+    command: go run ./cmd/grpc_server.go
+    ports:
+      - "50051:50051"
+    environment:
+      MYSQL_DSN: kofi_user:kofi_pass@tcp(mysql:3306)/kofi?parseTime=true
+
+volumes:
+  mysql_data:

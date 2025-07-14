@@ -1,6 +1,7 @@
 package types
 
 type KofiWebhookData struct {
+	TransactionID              string      `json:"transaction_id"`
 	VerificationToken          string      `json:"verification_token"`
 	MessageID                  string      `json:"message_id"`
 	Timestamp                  string      `json:"timestamp"`

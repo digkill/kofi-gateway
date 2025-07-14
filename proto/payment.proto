@@ -1,19 +1,33 @@
-syntax = "proto3";
+  syntax = "proto3";
 
-package payment;
+  package payment;
 
-option go_package = "github.com/digkill/kofi-gateway/proto;payment";
+  option go_package = "github.com/digkill/kofi-gateway/proto;payment";
 
-service PaymentService {
-  rpc ConfirmPayment(PaymentRequest) returns (PaymentResponse);
-}
+  // gRPC-сервис оплаты
+  service PaymentService {
+    // Создание запроса на оплату (Telegram-бот → шлюз)
+    rpc RequestPayment(PaymentRequest) returns (PaymentResponse);
 
-message PaymentRequest {
-  int64 user_id = 1;
-  string amount = 2;
-}
+    // Подтверждение успешной оплаты (Шлюз → Telegram-бот)
+    rpc ConfirmPayment(PaymentRequest) returns (PaymentResponse);
+  }
 
-message PaymentResponse {
-  bool success = 1;
-  string message = 2;
-}
+  // Запрос на оплату
+  message PaymentRequest {
+    int64 user_id = 1;
+    string order_id = 2;
+    int32 amount = 3;
+    int32 credits = 4;
+    string email = 5;
+    string username = 6;
+    string provider = 7; // "kofi", "telegram", и т.п.
+  }
+
+  // Ответ от сервера оплаты
+  message PaymentResponse {
+    string status = 1;        // "ok", "error", "pending"
+    string payment_link = 2;  // Ссылка на оплату, если есть
+    string message = 3;       // Текстовое сообщение
+    int32 code = 4;           // Код ошибки или статуса
+  }

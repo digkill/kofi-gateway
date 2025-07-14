@@ -1,6 +1,7 @@
 package db
 
 import (
+	_ "database/sql"
 	"encoding/json"
 )
 
@@ -25,43 +26,62 @@ func SaveTransaction(d Transaction) error {
 	return err
 }
 
-func EnqueueGRPC(userID int64, amount string) error {
-	_, err := DB.Exec(`INSERT INTO grpc_queue (user_id, amount) VALUES (?, ?)`, userID, amount)
+// ⚠️ Расширенная очередь gRPC
+type GRPCTask struct {
+	ID       int64
+	UserID   int64
+	OrderID  string
+	Amount   int32
+	Credits  int32
+	Email    string
+	Username string
+	Provider string
+}
+
+// Сохраняем задачу на подтверждение оплаты
+func EnqueueGRPC(task GRPCTask) error {
+	_, err := DB.Exec(`
+		INSERT INTO grpc_queue 
+		(user_id, order_id, amount, credits, email, username, provider) 
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		task.UserID, task.OrderID, task.Amount, task.Credits, task.Email, task.Username, task.Provider)
 	return err
 }
 
-func GetPendingGRPC() ([]struct {
-	ID     int64
-	UserID int64
-	Amount string
-}, error) {
-	rows, err := DB.Query(`SELECT id, user_id, amount FROM grpc_queue WHERE processed_at IS NULL AND attempts < 5`)
+// Получаем все неподтверждённые задачи
+func GetPendingGRPC() ([]GRPCTask, error) {
+	rows, err := DB.Query(`
+		SELECT id, user_id, order_id, amount, credits, email, username, provider 
+		FROM grpc_queue 
+		WHERE processed_at IS NULL AND attempts < 5`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var list []struct {
-		ID     int64
-		UserID int64
-		Amount string
-	}
+	var list []GRPCTask
 	for rows.Next() {
-		var item struct {
-			ID     int64
-			UserID int64
-			Amount string
+		var t GRPCTask
+		err := rows.Scan(&t.ID, &t.UserID, &t.OrderID, &t.Amount, &t.Credits, &t.Email, &t.Username, &t.Provider)
+		if err != nil {
+			continue
 		}
-		rows.Scan(&item.ID, &item.UserID, &item.Amount)
-		list = append(list, item)
+		list = append(list, t)
 	}
 	return list, nil
 }
 
+// Успешная обработка
 func MarkGRPCProcessed(id int64) {
 	DB.Exec(`UPDATE grpc_queue SET processed_at = NOW(), attempts = attempts + 1 WHERE id = ?`, id)
 }
 
+// Ошибка при повторной попытке
 func MarkGRPCError(id int64, err string) {
 	DB.Exec(`UPDATE grpc_queue SET attempts = attempts + 1, last_error = ? WHERE id = ?`, err, id)
+}
+
+func AddCredits(userID int64, credits int) error {
+	_, err := DB.Exec(`UPDATE users SET credits = credits + ? WHERE telegram_id = ?`, credits, userID)
+	return err
 }

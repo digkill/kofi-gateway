@@ -1,42 +1,53 @@
 package main
 
 import (
-	"fmt"
+	_ "fmt"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/digkill/kofi-gateway/grpc"
 	"github.com/digkill/kofi-gateway/internal"
 	"github.com/digkill/kofi-gateway/internal/db"
 	"github.com/digkill/kofi-gateway/internal/handlers"
 	"github.com/digkill/kofi-gateway/internal/logger"
 	"github.com/joho/godotenv"
-	"log"
-
-	"net/http"
 )
 
 func main() {
-	// Загружаем .env
+	// Загрузка переменных окружения из .env (если есть)
 	if err := godotenv.Load(); err != nil {
 		log.Println("⚠️ .env не найден — продолжаем с системными переменными")
 	}
 
+	// Инициализация БД
 	if err := db.Init(); err != nil {
-		log.Fatal("❌ DB error:", err)
+		log.Fatalf("❌ DB error: %v", err)
 	}
-	err := logger.InitLogger()
-	if err != nil {
-		fmt.Println("Error init logger:", err)
+
+	// Инициализация логгера
+	if err := logger.InitLogger(); err != nil {
+		log.Printf("⚠️ Logger error: %v", err)
 	}
+
+	// Старт retry-потока
 	internal.StartGRPCRetryLoop()
 
-	http.HandleFunc("/webhook/kofi", handlers.KofiWebhookHandler)
+	// gRPC-сервер (запускается в фоне)
 	go grpc.StartGRPCServer()
 
-	log.Println("🌐 HTTP server on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
-
+	// HTTP-эндпоинты
+	http.HandleFunc("/webhook/kofi", handlers.KofiWebhookHandler)
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
 
+	// Старт HTTP-сервера
+	port := os.Getenv("HTTP_PORT")
+	if port == "" {
+		port = "8081"
+	}
+	log.Printf("🌐 HTTP server running on :%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

@@ -7,11 +7,13 @@ import (
 	"github.com/digkill/kofi-gateway/internal"
 	"github.com/digkill/kofi-gateway/internal/logger"
 	"github.com/digkill/kofi-gateway/internal/types"
+	"github.com/digkill/kofi-gateway/internal/utils"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 func KofiWebhookHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,8 +66,20 @@ func KofiWebhookHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("🌟 Новый VIP подписчик: %s", payload.Email)
 	}
 
+	// 🎯 Конвертация суммы
+	amountInt, _ := strconv.Atoi(payload.Amount) // best-effort
+	credits := utils.EstimateCredits(amountInt)  // например, 1 руб = 1.5 кредита
+
 	// ✅ Отправка в CoreService
-	err = grpc.MarkPaymentCompleted(userID, payload.Amount)
+	err = grpc.MarkPaymentCompleted(
+		userID,
+		payload.TransactionID, // → OrderID
+		int32(amountInt),
+		int32(credits),
+		payload.Email,
+		payload.FromName,
+		"kofi",
+	)
 	if err != nil {
 		log.Printf("❌ gRPC ошибка: %v", err)
 	}

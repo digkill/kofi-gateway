@@ -19,13 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	PaymentService_RequestPayment_FullMethodName = "/payment.PaymentService/RequestPayment"
 	PaymentService_ConfirmPayment_FullMethodName = "/payment.PaymentService/ConfirmPayment"
 )
 
 // PaymentServiceClient is the client API for PaymentService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// gRPC-сервис оплаты
 type PaymentServiceClient interface {
+	// Создание запроса на оплату (Telegram-бот → шлюз)
+	RequestPayment(ctx context.Context, in *PaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error)
+	// Подтверждение успешной оплаты (Шлюз → Telegram-бот)
 	ConfirmPayment(ctx context.Context, in *PaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error)
 }
 
@@ -35,6 +41,16 @@ type paymentServiceClient struct {
 
 func NewPaymentServiceClient(cc grpc.ClientConnInterface) PaymentServiceClient {
 	return &paymentServiceClient{cc}
+}
+
+func (c *paymentServiceClient) RequestPayment(ctx context.Context, in *PaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PaymentResponse)
+	err := c.cc.Invoke(ctx, PaymentService_RequestPayment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *paymentServiceClient) ConfirmPayment(ctx context.Context, in *PaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error) {
@@ -50,7 +66,12 @@ func (c *paymentServiceClient) ConfirmPayment(ctx context.Context, in *PaymentRe
 // PaymentServiceServer is the server API for PaymentService service.
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility.
+//
+// gRPC-сервис оплаты
 type PaymentServiceServer interface {
+	// Создание запроса на оплату (Telegram-бот → шлюз)
+	RequestPayment(context.Context, *PaymentRequest) (*PaymentResponse, error)
+	// Подтверждение успешной оплаты (Шлюз → Telegram-бот)
 	ConfirmPayment(context.Context, *PaymentRequest) (*PaymentResponse, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
@@ -62,6 +83,9 @@ type PaymentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPaymentServiceServer struct{}
 
+func (UnimplementedPaymentServiceServer) RequestPayment(context.Context, *PaymentRequest) (*PaymentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestPayment not implemented")
+}
 func (UnimplementedPaymentServiceServer) ConfirmPayment(context.Context, *PaymentRequest) (*PaymentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConfirmPayment not implemented")
 }
@@ -84,6 +108,24 @@ func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&PaymentService_ServiceDesc, srv)
+}
+
+func _PaymentService_RequestPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).RequestPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_RequestPayment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).RequestPayment(ctx, req.(*PaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _PaymentService_ConfirmPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -111,6 +153,10 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "payment.PaymentService",
 	HandlerType: (*PaymentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "RequestPayment",
+			Handler:    _PaymentService_RequestPayment_Handler,
+		},
 		{
 			MethodName: "ConfirmPayment",
 			Handler:    _PaymentService_ConfirmPayment_Handler,

@@ -1,10 +1,11 @@
 package internal
 
 import (
-	"github.com/digkill/kofi-gateway/grpc"
-	"github.com/digkill/kofi-gateway/internal/db"
 	"log"
 	"time"
+
+	"github.com/digkill/kofi-gateway/grpc"
+	"github.com/digkill/kofi-gateway/internal/db"
 )
 
 func StartGRPCRetryLoop() {
@@ -19,7 +20,15 @@ func StartGRPCRetryLoop() {
 			}
 
 			for _, task := range tasks {
-				err := grpc.MarkPaymentCompleted(task.UserID, task.Amount)
+				err := grpc.MarkPaymentCompleted(
+					task.UserID,
+					task.OrderID,
+					task.Amount,
+					task.Credits,
+					task.Email,
+					task.Username,
+					task.Provider,
+				)
 				if err != nil {
 					log.Println("❌ Retry gRPC failed:", err)
 					db.MarkGRPCError(task.ID, err.Error())

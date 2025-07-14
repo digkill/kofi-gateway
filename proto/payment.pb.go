@@ -21,10 +21,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Запрос на оплату
 type PaymentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Amount        string                 `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	OrderId       string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Amount        int32                  `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
+	Credits       int32                  `protobuf:"varint,4,opt,name=credits,proto3" json:"credits,omitempty"`
+	Email         string                 `protobuf:"bytes,5,opt,name=email,proto3" json:"email,omitempty"`
+	Username      string                 `protobuf:"bytes,6,opt,name=username,proto3" json:"username,omitempty"`
+	Provider      string                 `protobuf:"bytes,7,opt,name=provider,proto3" json:"provider,omitempty"` // "kofi", "telegram", и т.п.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,17 +72,55 @@ func (x *PaymentRequest) GetUserId() int64 {
 	return 0
 }
 
-func (x *PaymentRequest) GetAmount() string {
+func (x *PaymentRequest) GetOrderId() string {
 	if x != nil {
-		return x.Amount
+		return x.OrderId
 	}
 	return ""
 }
 
+func (x *PaymentRequest) GetAmount() int32 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *PaymentRequest) GetCredits() int32 {
+	if x != nil {
+		return x.Credits
+	}
+	return 0
+}
+
+func (x *PaymentRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *PaymentRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *PaymentRequest) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+// Ответ от сервера оплаты
 type PaymentResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`                              // "ok", "error", "pending"
+	PaymentLink   string                 `protobuf:"bytes,2,opt,name=payment_link,json=paymentLink,proto3" json:"payment_link,omitempty"` // Ссылка на оплату, если есть
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`                            // Текстовое сообщение
+	Code          int32                  `protobuf:"varint,4,opt,name=code,proto3" json:"code,omitempty"`                                 // Код ошибки или статуса
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -111,11 +155,18 @@ func (*PaymentResponse) Descriptor() ([]byte, []int) {
 	return file_proto_payment_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PaymentResponse) GetSuccess() bool {
+func (x *PaymentResponse) GetStatus() string {
 	if x != nil {
-		return x.Success
+		return x.Status
 	}
-	return false
+	return ""
+}
+
+func (x *PaymentResponse) GetPaymentLink() string {
+	if x != nil {
+		return x.PaymentLink
+	}
+	return ""
 }
 
 func (x *PaymentResponse) GetMessage() string {
@@ -125,18 +176,33 @@ func (x *PaymentResponse) GetMessage() string {
 	return ""
 }
 
+func (x *PaymentResponse) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
 var File_proto_payment_proto protoreflect.FileDescriptor
 
 const file_proto_payment_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/payment.proto\x12\apayment\"A\n" +
+	"\x13proto/payment.proto\x12\apayment\"\xc4\x01\n" +
 	"\x0ePaymentRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\tR\x06amount\"E\n" +
-	"\x0fPaymentResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2U\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\x05R\x06amount\x12\x18\n" +
+	"\acredits\x18\x04 \x01(\x05R\acredits\x12\x14\n" +
+	"\x05email\x18\x05 \x01(\tR\x05email\x12\x1a\n" +
+	"\busername\x18\x06 \x01(\tR\busername\x12\x1a\n" +
+	"\bprovider\x18\a \x01(\tR\bprovider\"z\n" +
+	"\x0fPaymentResponse\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12!\n" +
+	"\fpayment_link\x18\x02 \x01(\tR\vpaymentLink\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x12\n" +
+	"\x04code\x18\x04 \x01(\x05R\x04code2\x9a\x01\n" +
 	"\x0ePaymentService\x12C\n" +
+	"\x0eRequestPayment\x12\x17.payment.PaymentRequest\x1a\x18.payment.PaymentResponse\x12C\n" +
 	"\x0eConfirmPayment\x12\x17.payment.PaymentRequest\x1a\x18.payment.PaymentResponseB/Z-github.com/digkill/kofi-gateway/proto;paymentb\x06proto3"
 
 var (
@@ -157,10 +223,12 @@ var file_proto_payment_proto_goTypes = []any{
 	(*PaymentResponse)(nil), // 1: payment.PaymentResponse
 }
 var file_proto_payment_proto_depIdxs = []int32{
-	0, // 0: payment.PaymentService.ConfirmPayment:input_type -> payment.PaymentRequest
-	1, // 1: payment.PaymentService.ConfirmPayment:output_type -> payment.PaymentResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	0, // 0: payment.PaymentService.RequestPayment:input_type -> payment.PaymentRequest
+	0, // 1: payment.PaymentService.ConfirmPayment:input_type -> payment.PaymentRequest
+	1, // 2: payment.PaymentService.RequestPayment:output_type -> payment.PaymentResponse
+	1, // 3: payment.PaymentService.ConfirmPayment:output_type -> payment.PaymentResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

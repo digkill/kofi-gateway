@@ -3,11 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/digkill/kofi-gateway/grpc"
-	"github.com/digkill/kofi-gateway/internal"
-	"github.com/digkill/kofi-gateway/internal/logger"
-	"github.com/digkill/kofi-gateway/internal/types"
-	"github.com/digkill/kofi-gateway/internal/utils"
+	"kofi-gateway/grpc"
+	"kofi-gateway/internal"
+	"kofi-gateway/internal/logger"
+	"kofi-gateway/internal/types"
+	"kofi-gateway/internal/utils"
+
 	"io"
 	"log"
 	"net/http"

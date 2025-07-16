@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/digkill/kofi-gateway/grpc"
-	"github.com/digkill/kofi-gateway/internal"
-	"github.com/digkill/kofi-gateway/internal/db"
-	"github.com/digkill/kofi-gateway/internal/handlers"
-	"github.com/digkill/kofi-gateway/internal/logger"
 	"github.com/joho/godotenv"
+	"kofi-gateway/grpc"
+	"kofi-gateway/internal"
+	"kofi-gateway/internal/db"
+	"kofi-gateway/internal/handlers"
+	"kofi-gateway/internal/logger"
 )
 
 func main() {

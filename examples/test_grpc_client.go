@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	pb "github.com/digkill/kofi-gateway/proto"
 	"google.golang.org/grpc"
+	pb "kofi-gateway/proto"
 )
 
 func main() {

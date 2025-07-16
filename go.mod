@@ -1,4 +1,4 @@
-module github.com/digkill/kofi-gateway
+module kofi-gateway
 
 go 1.23.3
 

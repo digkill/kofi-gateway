@@ -2,10 +2,10 @@ package grpc_test
 
 import (
 	"context"
-	"github.com/digkill/kofi-gateway/grpc"
+	"kofi-gateway/grpc"
 	"testing"
 
-	pb "github.com/digkill/kofi-gateway/proto"
+	pb "kofi-gateway/proto"
 )
 
 func TestConfirmPayment(t *testing.T) {

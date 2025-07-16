@@ -2,7 +2,7 @@
 
   package payment;
 
-  option go_package = "github.com/digkill/kofi-gateway/proto;payment";
+  option go_package = "kofi-gateway/proto;payment";
 
   // gRPC-сервис оплаты
   service PaymentService {

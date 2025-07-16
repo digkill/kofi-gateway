@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/digkill/kofi-gateway/grpc"
-	"github.com/digkill/kofi-gateway/internal/db"
+	"kofi-gateway/grpc"
+	"kofi-gateway/internal/db"
 )
 
 func StartGRPCRetryLoop() {

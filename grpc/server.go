@@ -3,10 +3,10 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"github.com/digkill/kofi-gateway/internal/db"
-	"github.com/digkill/kofi-gateway/internal/payment"
-	pb "github.com/digkill/kofi-gateway/proto"
 	"google.golang.org/grpc"
+	"kofi-gateway/internal/db"
+	"kofi-gateway/internal/payment"
+	pb "kofi-gateway/proto"
 	"log"
 	"net"
 )
